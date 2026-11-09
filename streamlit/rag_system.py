@@ -10,20 +10,33 @@ logger = logging.getLogger(__name__)
 
 class RAGSystem:
     """Simple RAG system for answer generation using different retrievers."""
-    
-    def __init__(self, openai_api_key: str, model: str = "gpt-3.5-turbo", temperature: float = 0.1):
+
+    def __init__(self, openai_api_key: str, model: str = "gpt-5.4-mini", temperature: float = 0.1):
         """Initialize RAG system."""
         self.api_key = openai_api_key
         self.model = model
         self.temperature = temperature
-        
+
         # Set up OpenAI client
         try:
             from openai import OpenAI
-            self.client = OpenAI(api_key=openai_api_key)
+
+            if openai_api_key.startswith("voc-"):
+                self.client = OpenAI(
+                    api_key=openai_api_key,
+                    base_url="https://openai.vocareum.com/v1"
+                )
+            else:
+                self.client = OpenAI(api_key=openai_api_key)
+
         except ImportError:
             # Fallback for older openai versions
+            import openai
             openai.api_key = openai_api_key
+
+            if openai_api_key.startswith("voc-"):
+                openai.api_base = "https://openai.vocareum.com/v1"
+
             self.client = None
     
     def generate_answer(self, query: str, retrieved_docs: List[str]) -> Dict[str, Any]:

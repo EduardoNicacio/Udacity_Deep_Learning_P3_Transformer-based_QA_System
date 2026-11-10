@@ -131,11 +131,13 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv312
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+**/.env
 
 # Spyder project settings
 .spyderproject
@@ -174,4 +176,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-**/.env
+# Project files and folders
+dataset/

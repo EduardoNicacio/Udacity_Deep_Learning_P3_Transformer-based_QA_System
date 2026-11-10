@@ -1,0 +1,39 @@
+{
+  "component": "evaluator",
+  "timestamp": "2026-11-09T17:50:50.843955",
+  "total_tests": 5,
+  "passed_tests": 5,
+  "failed_tests": 0,
+  "test_details": [
+    {
+      "test_name": "test_complete_evaluation_pipeline",
+      "passed": true,
+      "error_message": null,
+      "timestamp": "2026-11-09T17:50:50.839654"
+    },
+    {
+      "test_name": "test_evaluation_with_different_scenarios",
+      "passed": true,
+      "error_message": null,
+      "timestamp": "2026-11-09T17:50:50.840947"
+    },
+    {
+      "test_name": "test_mrr_implementation",
+      "passed": true,
+      "error_message": null,
+      "timestamp": "2026-11-09T17:50:50.841957"
+    },
+    {
+      "test_name": "test_precision_at_k_implementation",
+      "passed": true,
+      "error_message": null,
+      "timestamp": "2026-11-09T17:50:50.842955"
+    },
+    {
+      "test_name": "test_recall_at_k_implementation",
+      "passed": true,
+      "error_message": null,
+      "timestamp": "2026-11-09T17:50:50.843955"
+    }
+  ]
+}

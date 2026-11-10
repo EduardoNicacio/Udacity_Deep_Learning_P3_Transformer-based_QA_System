@@ -92,12 +92,13 @@ class Word2VecRetriever:
         # For each word, check if it exists in self.model.wv and add to word_vectors
         for word in words:
             # Check if word exists in vocabulary and add vector
-            pass
+            if word in self.model.wv:
+                word_vectors.append(self.model.wv[word])
         
         if word_vectors:
             # YOUR CODE HERE: Average word vectors to get document vector
             # Use np.mean() along the correct axis
-            return None
+            return np.mean(word_vectors, axis=0)
         else:
             # Return zero vector if no words found in vocabulary
             return np.zeros(self.vector_size)
@@ -113,20 +114,27 @@ class Word2VecRetriever:
         
         # YOUR CODE HERE: Preprocess all documents for training
         # Use self._preprocess_text() on each document in corpus_texts
-        processed_docs = None
+        processed_docs = [self._preprocess_text(doc) for doc in corpus_texts]
         
         # YOUR CODE HERE: Train Word2Vec model
         # Create Word2Vec instance with self parameters (vector_size, window, etc.)
-        self.model = None
+        self.model = Word2Vec(
+            sentences=processed_docs,
+            vector_size=self.vector_size,
+            window=self.window,
+            min_count=self.min_count,
+            sg=self.sg,
+            epochs=self.epochs
+        )
         
         logger.info(f"Word2Vec model trained with vocabulary")
         
         # YOUR CODE HERE: Convert all documents to vectors using trained model
         # Use self._text_to_vector() on each document and store in list
-        self.corpus_vectors = []
+        self.corpus_vectors = [self._text_to_vector(doc) for doc in corpus_texts]
         
         # YOUR CODE HERE: Convert list to numpy array and store corpus_texts
-        self.corpus_vectors = None
+        self.corpus_vectors = np.array(self.corpus_vectors)
         self.corpus_texts = corpus_texts
         
         logger.info(f"Indexed {len(corpus_texts)} documents")
@@ -149,16 +157,18 @@ class Word2VecRetriever:
         
         for q_idx, query in enumerate(queries):
             # YOUR CODE HERE: Convert query to vector using _text_to_vector
-            query_vector = None
+            query_vector = self._text_to_vector(query)
             
             if query_vector is not None:
                 # YOUR CODE HERE: Calculate cosine similarities between query and corpus
                 # Use cosine_similarity from sklearn.metrics.pairwise
-                similarities = None
+                similarities = cosine_similarity(
+                    query_vector.reshape(1, -1), self.corpus_vectors
+                )[0]
                 
                 # YOUR CODE HERE: Get top-k most similar document indices
                 # Use np.argsort with reverse order and slice to k
-                top_indices = None
+                top_indices = np.argsort(similarities)[::-1][:k]
                 results[q_idx] = top_indices.tolist()
             else:
                 # If query has no known words, return random documents
@@ -217,7 +227,7 @@ class Word2VecRetriever:
         # YOUR CODE HERE: Initialize tracking variables
         # Set up best_config, best_score, best_metrics, and results_log
         best_config = None
-        best_score = None  # Initialize with appropriate starting value
+        best_score = -1.0  # Initialize with appropriate starting value
         best_metrics = None
         results_log = []
 
@@ -232,24 +242,30 @@ class Word2VecRetriever:
                 with redirect_stderr(stderr_suppressor):
                     # YOUR CODE HERE: Create and train Word2Vec retriever with current params
                     # Initialize retriever with **params and build index with corpus_texts
-                    test_retriever = None
+                    test_retriever = Word2VecRetriever(**params)
+                    test_retriever.build_index(corpus_texts)
                     
                     # YOUR CODE HERE: Run retrieval evaluation
                     # Use retriever to get results for query_texts with k=20
-                    test_results = None
+                    test_results = test_retriever.retrieve(query_texts, k=20)
 
                     # YOUR CODE HERE: Evaluate performance using evaluator_class
                     # Call evaluate_retrieval with test_results and qrels_dict
-                    test_metrics = None
+                    test_metrics = evaluator_class.evaluate_retrieval(test_results, qrels_dict)
 
                     # YOUR CODE HERE: Extract key metrics for comparison
                     # Get MRR and Recall@5 from test_metrics
-                    mrr_score = None
-                    recall_5 = None
+                    mrr_score = test_metrics['MRR']
+                    recall_5 = test_metrics['Recall@5']
 
                     # YOUR CODE HERE: Log results for this configuration
                     # Append dict with config, mrr, recall_5, and metrics to results_log
-                    results_log.append({})
+                    results_log.append({
+                        'config':   params,
+                        'mrr':      mrr_score,
+                        'recall_5': recall_5,
+                        'metrics':  test_metrics
+                    })
 
                     # Explicitly delete to trigger cleanup inside suppression context
                     del test_retriever
@@ -258,10 +274,10 @@ class Word2VecRetriever:
 
                 # YOUR CODE HERE: Update best configuration if current is better
                 # Compare mrr_score with best_score and update if improved
-                if True:  # Replace with proper condition
-                    best_score = None
-                    best_config = None
-                    best_metrics = None
+                if best_score is None or mrr_score > best_score:
+                    best_score   = mrr_score
+                    best_config  = params
+                    best_metrics = test_metrics
                     print(f"   ✨ NEW BEST! (MRR improved: {best_score:.4f})")
 
             except Exception as e:
@@ -273,7 +289,12 @@ class Word2VecRetriever:
 
         # YOUR CODE HERE: Return optimization results
         # Return dict with best_config, best_score, best_metrics, and results_log
-        return {}
+        return {
+            'best_config':  best_config,
+            'best_score':   best_score,
+            'best_metrics': best_metrics,
+            'results_log':  results_log
+        }
 
 
 if __name__ == "__main__":
